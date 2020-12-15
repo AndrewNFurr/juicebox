@@ -1,6 +1,7 @@
 const express = require('express');
 const usersRouter = express.Router();
-const { getAllUsers, getUserByUsername, createUser } = require('../db');
+const { getAllUsers, getUserByUsername, createUser, getUserById, updateUser } = require('../db');
+const { requireUser, requireActiveUser } = require('./utils');
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
 
@@ -31,6 +32,7 @@ usersRouter.post('/login', async (req, res, next) => {
 
   try {
     const user = await getUserByUsername(username);
+    console.log(user.id);
 
     if (user && user.password == password) {
       // create token & return to user
@@ -81,6 +83,50 @@ usersRouter.post('/register', async (req, res, next) => {
     } catch ({ name, message }) {
       next({ name, message })
     } 
+  });
+  
+  usersRouter.delete('/:userId', requireActiveUser, async (req, res, next) => {
+        try {
+            const user = await getUserById(req.user.id)
+            console.log(user, req.user)
+
+            if (user.id === req.user.id) {
+               const updatedUser = await updateUser(user.id, {active: false});
+
+              res.send({ user: updatedUser });
+            } else {
+                next(user ? { 
+                    name: "UnauthorizedUserError",
+                    message: "You cannot delete a user, whom you are not"
+                  } : {
+                    name: "UserNotFoundError",
+                    message: "That user does not exist"
+                  });
+              }
+        } catch ({ name, message }) {
+            next({ name, message })
+          }
+  });
+
+  usersRouter.patch('/:userId', requireUser, async (req, res, next) => {
+      try {
+          const user = await getUserById(req.user.id);
+
+          if (user.id === req.user.id) {
+              const setActive = await updateUser(user.id, {active: true})
+              res.send({user: setActive});
+          } else {
+            next(user ? { 
+                name: "UnauthorizedUserError",
+                message: "You cannot delete a user, whom you are not"
+              } : {
+                name: "UserNotFoundError",
+                message: "That user does not exist"
+              });
+          }
+      } catch ({ name, message }) {
+        next({ name, message })
+      }
   });
 
 module.exports = usersRouter;

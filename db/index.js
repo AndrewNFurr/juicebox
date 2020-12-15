@@ -38,6 +38,13 @@ async function updateUser(id, fields = {}) {
   }
 
   try {
+    const queryString = `
+    UPDATE users
+    SET ${ setString }
+    WHERE id=${ id }
+    RETURNING *;
+  `
+  console.log(queryString);
     const { rows: [ user ] } = await client.query(`
       UPDATE users
       SET ${ setString }

@@ -1,7 +1,7 @@
 const express = require('express');
 const postsRouter = express.Router();
 const { getAllPosts, createPost, getAllTags, updatePost, getPostById } = require('../db');
-const { requireUser } = require('./utils');
+const { requireUser, requireActiveUser } = require('./utils');
 
 
 postsRouter.post('/', requireUser, async (req, res, next) => {
@@ -52,8 +52,9 @@ postsRouter.get('/', async (req, res) => {
       const posts = allPosts.filter(post => {
          // the post is active, doesn't matter who it belongs to
     if (post.active) {
-    return true;
+        return true;
     }
+
 
      // the post is not active, but it belogs to the current user
      if (req.user && post.author.id === req.user.id) {
